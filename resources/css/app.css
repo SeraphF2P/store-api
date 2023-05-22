@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.remove-scroll-bar {
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.remove-scroll-bar::-webkit-scrollbar {
+    display: none;
+}
+.btn {
+    @apply rounded px-4 py-2 shadow transition-all duration-200 hover:scale-105 active:scale-95;
+}
+.btn-danger {
+    @apply bg-red-500   hover:bg-red-400  active:bg-red-400;
+}
+.btn-success {
+    @apply bg-teal-500   hover:bg-teal-400  active:bg-teal-400;
+}
+.btn-info {
+    @apply bg-sky-500   hover:bg-sky-400  active:bg-sky-400;
+}
+.alert {
+    @apply rounded h-20 animate-toast translate-x-[1000px] px-8 py-4 min-w-[300px] flex justify-center items-center;
+}
+.alert-danger {
+    @apply bg-red-500 text-white;
+}
+
+.form-input {
+    @apply rounded-sm placeholder:capitalize ;
+}
+.toast-container {
+    --delay: 0.2s;
+
+    .delay:nth-child(1) {
+        animation-delay: calc(var(--delay) * 0);
+    }
+    .delay:nth-child(2) {
+        animation-delay: calc(var(--delay) * 1);
+    }
+    .delay:nth-child(3) {
+        animation-delay: calc(var(--delay) * 2);
+    }
+    .delay:nth-child(4) {
+        animation-delay: calc(var(--delay) * 3);
+    }
+    .delay:nth-child(5) {
+        animation-delay: calc(var(--delay) * 4);
+    }
+    .delay:nth-child(6) {
+        animation-delay: calc(var(--delay) * 5);
+    }
+}

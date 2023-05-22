@@ -1,0 +1,45 @@
+<?php
+
+use App\Http\Controllers\AdmainController;
+use App\Http\Controllers\CSRFController;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\ThemeController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+ */
+// Route::view('/{path?}', 'index')->where(['path' => '^((?!api).)*$']);
+
+Route::resource('/themes', ThemeController::class);
+Route::resource('/store', StoreController::class);
+
+Route::get('/', function () {
+    return view('pages.register');
+});
+
+Route::get('/themes/{product_id}/add', [ThemeController::class, 'addtheme'])->name('themes.add');
+
+Route::get('/storage/{file}/{image}', function ($file, $image) {
+  $path = storage_path("app/public/$file/$image");
+  if (!file_exists($path)) {
+    abort(404);
+  }
+  return response()->file($path);
+});
+
+Route::controller(AdmainController::class)->group(function () {
+    Route::post('/login', "login")->name("login");
+    Route::get('/logout', "logout")->name("logout");
+    Route::get('/dashboard', "dashboard")->name("dashboard");
+});
