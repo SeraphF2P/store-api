@@ -14,14 +14,13 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-
             $table->string('name')->unique();
             $table->string('seller_name');
             $table->double('price');
-            $table->enum('category', ['shoes', 'accessories', 'electronics', 'jewelry', "men\'s clothing", "women\'s clothing"]);
+            $table->enum('category', ['shoes', 'accessories', 'electronics', 'jewelrys', "men\'s clothing", "women\'s clothing"]);
+            $table->double('rating')->default(0.00);
             $table->string('description');
-            $table->float('rating')->default(0.00);
-
+            $table->foreignid('users_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -24,13 +24,13 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/login', "login")->name("login");
     Route::post('/signup', "signup")->name("signup");
     Route::get('/register', "logout")->name("logout");
+    Route::post('/validateUserRole', "validateUserRole");
 });
 Route::controller(Products::class)->group(function () {
-    Route::get('/products', "index");
-    Route::get('/products/category/{category}', "index");
-    Route::get('/products/{product_id}', "show");
-    Route::get('/products/{product_id}/{theme_id}', "show");
-});
-Route::get('/products/catagorys',function(){
-  return response()->json(['shoes','clothes','food']);
+  Route::prefix('/products')->group(function () {
+    Route::get('/categorys','categorys');
+    Route::get('', "index");
+    Route::get('/{product_id}', "show");
+    Route::get('/{product_id}/{theme_id}', "show");
+    });
 });

@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\SignUpRequest;
+use App\Http\Requests\ValidateRoleRequest;
 use App\Models\User;
 use Error;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -62,7 +65,7 @@ Auth::login($user);
 
         return response()->json([
             'success' => true,
-            'role' => 'guest',
+            'role' => $user->role,
             'msg' => 'Login successfully',
             'token' => $token->plainTextToken,
         ]);
@@ -82,4 +85,32 @@ Auth::login($user);
         Session()->flush();
         return redirect("/");
     }
+    public function validateUserRole(ValidateRoleRequest $req)
+    {
+      $req->validated();
+
+        $token = $req->bearerToken();
+      $validetedToken = PersonalAccessToken::findToken($token);
+      if(!isset($validetedToken)){
+          return response()->json([
+          'success'=> false,
+          'msg'=> 'access denied',
+        ],401);
+      };  
+  if($validetedToken):
+    if($validetedToken->can($req->ability)){
+    $abilities = $validetedToken->get();
+      return response()->json([
+          'success'=> true,
+          'msg'=> 'access granted',
+          'abilities'=> $abilities
+        ]);
+    }else{
+    return response()->json([
+          'success'=> false,
+          'msg'=> 'access denied',
+        ],401);
+    };
+  endif;
+}
 }

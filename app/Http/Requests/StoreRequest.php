@@ -23,13 +23,13 @@ class StoreRequest extends FormRequest
     {
         return [
             "name" => "unique:products,name|min:3|required",
-            "seller_name" => "min:3|required",
             "price" => "required|numeric|min:1",
             "category" => "required",
             "description" => "required",
             "color" => "required",
             "image" => "required|image|mimes:webp,png,jpg,jpeg",
             "in_stock" => "required|numeric",
+            "seller_id" => "required",
         ];
     }
     public function messages(): array

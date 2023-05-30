@@ -5,25 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreRequest;
 use App\Models\Products;
 use App\Models\Themes;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 
 class StoreController extends Controller
 {
-  // public function __construct()
-  // {
-  //   return $this->middleware('auth');
-  // }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-      if(!Session::get('admin'))return redirect('/');
-        $products = Products::get();
-        $user = Auth::user();
-        return view('pages.products', compact("products", "user"));
+        $products = Products::with('themes')->get();
+        return view('pages.products.index', compact("products"));
     }
 
     /**
@@ -31,8 +26,8 @@ class StoreController extends Controller
      */
     public function create()
     {
-      if(!Session::get('admin'))return redirect('/');
-        return view("pages.addproduct");
+      $sellers=User::where('role','seller')->select('name','id')->get();
+        return view("pages.products.add",compact('sellers'));
     }
 
     /**
@@ -40,28 +35,35 @@ class StoreController extends Controller
      */
     public function store(StoreRequest $req)
     {
-      if(!Session::get('admin'))return redirect('/');
-      $validatedData = $req->validated();
+   $req->validated();
       if ($req->file("image")):
+
         $name =time(). $req->file("image")->getClientOriginalName();
         $path = $req->file("image")->storeAs("products",$name,'public');
+        /**  @var \App\Models\User $seller */
+        $seller = User::find($req->seller_id);
+
         $product = Products::create([
             "name" => $req["name"],
-            "seller_name" => $req["seller_name"],
+            "seller_name" => $seller->name,
+            "users_id" => $req->seller_id,
             "price" => $req["price"],
             "category" => $req["category"],
             "description" => $req["description"],
+            "rating" => $req["rating"],
         ]);
-        Themes::create([
-            "product_id" => $product->id,
+         /**  @var \App\Models\Products $product */
+       $product->themes()->create([
+            "products_id" => $product->id,
             "color" => $req["color"],
-            "image" => $path,
+            "image" =>  $path,
             "in_stock" => $req["in_stock"],
-            "seller_name" => $req["seller_name"],
-        ]);
+            "seller_name" => $seller->name,
+       ]);
+       
       endif;
 
-        return view('pages.dashboard')->with('success', 'product added successfully');
+        return redirect('/store')->with('success', 'product added successfully');
     }
 
     /**
@@ -69,10 +71,9 @@ class StoreController extends Controller
      */
     public function show(int $id)
     {
-      if(!Session::get('admin'))return redirect('/');
-        $themes = Themes::where("product_id", $id)->get();
+        $themes = Themes::where("products_id", $id)->get();
 
-        return view("pages.themes", compact("themes", "id"));
+        return view("pages.themes.index", compact("themes", "id"));
     }
 
     /**
@@ -80,9 +81,8 @@ class StoreController extends Controller
      */
     public function edit(int $id)
     {
-      if(!Session::get('admin'))return redirect('/');
         $product = Products::find($id);
-        return view("pages.editproduct", compact("product"));
+        return view("pages.products.edit", compact("product"));
     }
 
     /**
@@ -90,7 +90,6 @@ class StoreController extends Controller
      */
     public function update(StoreRequest $req, int $id)
     {
-      if(!Session::get('admin'))return redirect('/');
         $product = Products::find($id);
         $product->name = $req->name;
         $product->price = $req->price;
@@ -101,7 +100,7 @@ class StoreController extends Controller
         $products = Products::get();
         $success = "Product updated successfully.";
 
-        return view("pages.products", compact("products", "success"));
+        return view("pages.products.index", compact("products", "success"));
     }
 
     /**
@@ -109,9 +108,9 @@ class StoreController extends Controller
      */
   public function destroy(int $id)
 {
-       if(!Session::get('admin'))return redirect('/');
 
-        $themes = Themes::where("product_id", $id)->get();
+
+        $themes = Themes::where("products_id", $id)->get();
         foreach ($themes as $theme) {
         if(file_exists('assets/' . $theme ->image)){
             File::unlink('assets/' . $theme ->image);

@@ -2,54 +2,82 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AdminAuthRequest;
+use App\Http\Requests\Owner\CreateUserRequest;
+use App\Http\Requests\Owner\UpdateUserRequest;
 use App\Http\Requests\SignUpRequest;
 use App\Models\User;
-use Illuminate\Contracts\Support\ValidatedData;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
 
 class UserController extends Controller
 {
-    public function signup(Request $req)
+    /**
+     * Display a listing of the resource.
+     */
+   public function index()
+  {
+   $users = User::get();
+   return view('pages.users.index',compact('users'));
+  }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
     {
-        $validatedData = $req->validated();
-        if (isset($user)):
-            if (Hash::check($validatedData["password"], $user->password)):
-                Auth::login($user);
-                return view('pages.dashboard')->with('success', 'Logged in successfully.');
-            else:
-                return redirect('/')->with('error', 'Invalid email or password.');
-            endif;
-        else:
-            $user = User::create([
-                'name' => $validatedData["name"],
-                'email' => $validatedData["email"],
-                'password' => Hash::make($validatedData["password"]),
-            ]);
-            Auth::login($user);
-            return view('pages.dashboard')->with('success', 'signed up successfully.');
-        endif;$user = User::where('email', $validatedData["email"])->first();
-        
-    }
-    public function login(AdminAuthRequest $req)
-    {
-       $user = User::where('email', $req["email"])->first();
-            if ($req["password"] == 'asdasd123' && $req["email"] == 'asd@asd.com'):
-              Auth::login($user);
-                return view('pages.dashboard')->with('success', 'Logged in successfully.');
-            else:
-                return redirect('/')->with('error', 'Invalid email or password.');
-            endif;
      
-    }
-    public function logout()
-    {
-        Auth::logout();
-        Session()->flush();
-        return redirect("/");
+        return view('pages.users.add');
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(CreateUserRequest $req)
+    {
+      
+       $user= User::create($req->validated());
+        if($user):
+          return redirect('/users')->with('success','user added successfully');
+        else:
+          return redirect('/users')->with('error','faild to add the user');
+        endif;
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(int $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(int $id)
+    {
+     $user = User::find($id);
+        return view('pages.users.edit',compact('user'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateUserRequest $req, int $id)
+    {
+      $user= User::find($id);
+      if(isset($user)){
+        $user->update($req->validated());
+        return redirect('/users')->with('success','updated successfully');
+      }
+        return abort(404);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(int $id)
+    {
+        User::find($id)->delete();
+        return  back()->with('success','deleted successfully');
+    }
 }

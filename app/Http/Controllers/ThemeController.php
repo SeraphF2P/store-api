@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Products;
 use App\Models\Themes;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
@@ -12,11 +13,11 @@ use Psy\Output\Theme;
 
 class ThemeController extends Controller
 {
-    public function addtheme(int $product_id)
+    public function addtheme(int $products_id)
     {
-      if(!Session::get('admin'))return redirect('/');
-       
-        return view('pages.addtheme',compact("product_id"));
+      /** @var \app\Models\Products */
+       $seller_name=Products::query()->find($products_id)->first()->seller_name;
+        return view('pages.themes.add',compact("products_id",'seller_name'));
        
     }
     /**
@@ -24,9 +25,8 @@ class ThemeController extends Controller
      */
     public function index()
     {
-      if(!Session::get('admin'))return redirect('/');
         $themes = Themes::get();
-        return view("pages.themes", compact("themes"));
+        return view("pages.themes,index", compact("themes"));
     }
 
     /**
@@ -34,8 +34,7 @@ class ThemeController extends Controller
      */
     public function create()
     {
-     if(!Session::get('admin'))return redirect('/');
-        return view("pages.addtheme");
+        return view("pages.themes.add");
     }
 
     /**
@@ -43,20 +42,26 @@ class ThemeController extends Controller
      */
     public function store(Request $req)
     {
-       if(!Session::get('admin'))return redirect('/');
+
  if ($req->file("image")){
+       $products_id = $req['products_id'];
         $name =time(). $req->file("image")->getClientOriginalName();
         $path = $req->file("image")->storeAs("products",$name,'public');
-        Themes::create([
-            "product_id" => $req->product_id,
+        /** @var \app\Models\Products $product */
+        $product = Products::find($products_id);
+         $product->themes()->create(
+[
+            "products_id" => $products_id,
             "color" => $req->color,
             "image" => $path,
             "in_stock" => $req->in_stock,
             "seller_name"=>$req->seller_name,
+            "rating"=>$req->rating,
 
-        ]);
-        $product_id = $req->product_id;
-        return redirect("themes/".$product_id);
+        ]
+);
+        
+        return redirect("themes/".$products_id);
  };
  return back()->with('error','upload failed');
     }
@@ -64,14 +69,13 @@ class ThemeController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(int $id)
+    public function show(int $products_id)
     {
-      if(!Session::get('admin'))return redirect('/');
-       $product =Products::find($id);
-        $themes = Themes::where("product_id", $product["id"])->get();
-        $product_id=$id;
+      /** @var \App\Models\Products $product */
+     $product =Products::with('themes')->find($products_id);
+        $themes = $product->themes()->get();
         $seller_name=$product->seller_name;
-        return view("pages.themes", compact("themes", "product_id","seller_name"));
+        return view("pages.themes.index", compact("themes", "products_id",'seller_name'));
 
     }
 
@@ -79,10 +83,9 @@ class ThemeController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
-    {
-      if(!Session::get('admin'))return redirect('/'); 
+    { 
             $theme = Themes::find($id);
-            return view("pages.edittheme", compact("theme"));
+            return view("pages.themes.edit", compact("theme"));
     }
 
     /**
@@ -90,7 +93,6 @@ class ThemeController extends Controller
      */
     public function update(Request $req, string $id)
     {
-      if(!Session::get('admin'))return redirect('/');
         $theme = Themes::find($id);
         $theme->color = $req->color;
         $theme->image = $req->image;
@@ -101,10 +103,11 @@ class ThemeController extends Controller
               $name =time(). $req->file("image")->getClientOriginalName();
               $path = $req->file("image")->storeAs("products",$name,'public');
               $theme->image = $path;
+              $theme->rating = $req ->rating;
             // }
         }
         $theme->save();
-        return redirect('/themes/' . $theme->product_id);
+        return redirect('/themes/' . $theme->products_id);
 
     }
 
@@ -113,22 +116,21 @@ class ThemeController extends Controller
      */
     public function destroy(string $id)
     {
-      if(!Session::get('admin'))return redirect('/');
       /** @var \App\Models\Themes $theme */
         $theme = Themes::find($id);
-        $product_id = $theme->product_id;
+        $products_id = $theme->products_id;
 
-        $themes = Themes::where('product_id', $product_id);
+        $themes = Themes::where('products_id', $products_id);
 
         if ($themes->count() == 1) {
-            Products::find($theme->product_id)->delete();
+            Products::find($theme->products_id)->delete();
             return redirect()->route("store.index");
         };
         if(file_exists('assets/' . $theme ->image)){
             File::unlink('assets/' . $theme ->image);
         }
           $theme->delete();
-        return redirect()->route("themes.show", $product_id);
+        return redirect()->route("themes.show", $products_id);
     }
 
 }

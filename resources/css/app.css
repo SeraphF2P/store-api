@@ -28,9 +28,15 @@
 .alert-danger {
     @apply bg-red-500 text-white;
 }
+.alert-success {
+    @apply bg-green-400 text-white;
+}
+.alert-info {
+    @apply bg-sky-400 text-white;
+}
 
 .form-input {
-    @apply rounded-sm placeholder:capitalize ;
+    @apply rounded-sm placeholder:capitalize;
 }
 .toast-container {
     --delay: 0.2s;

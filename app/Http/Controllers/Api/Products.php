@@ -9,32 +9,37 @@ use Illuminate\Http\Request;
 
 class Products extends Controller
 {
+  public function categorys(){
+    return response()->json(
+      ['shoes', 
+      'accessories', 
+      'electronics', 
+      'jewelrys', 
+      "men's clothing",
+      "women's clothing"]);
+  }
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request,string $category = null)
+    public function index(Request $request)
     {
       $limit = $request->query('limit', 20);
-      if(isset($category) ){
-        $data = ModelsProducts::query()->limit($limit)->where("category",$category)->get();
-      }else{
-        $data =ModelsProducts::query()->limit($limit)->get();
+      $search = $request->query('search');
+      $category = $request->query('category');
+      
+    $data = ModelsProducts::query()->with('themes')
+        ->limit($limit);
+      if($category){
+        $data = $data->where("category",$category);
       }
-      $products =[];
-      foreach($data as $p){
-          /** @var \App\Models\Products $p */
-        $themes = Themes::where('product_id', $p->id)->get();
-        foreach($themes as $t){
-          $p['color'] =$t['color'];
-          $p['in_stock'] =$t['in_stock'];
-          $p['product_image_url'] =$t['product_image_url'];
-          $p['seller_name'] =$t['seller_name'];
-          $p['created_at'] =$t['created_at'];
-          $p['theme_id'] =$t['id'];
-          array_push($products, $p);
-        }
-       }
-       
+      if ($search ) {
+        $products = $data->where("name", "LIKE", "%$search%")->get();
+        return response()->json($products);
+    }
+
+      $products =$data->get();
+    
+     
         return response()->json($products);
     }
 
@@ -49,27 +54,28 @@ class Products extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(int $product_id,int $theme_id = null)
+    public function show(int $products_id,int $theme_id = null)
     {
-      $product = ModelsProducts::find($product_id);
+      
+      $product = ModelsProducts::find($products_id);
       if(isset($theme_id,$product)){
         $theme = Themes::where('id', $theme_id)
-        ->where('product_id',$product_id)
+        ->where('products_id',$products_id)
         ->first();
-        if(isset($theme))
+        if($theme)
         {
           $product['color'] =$theme['color'];
           $product['in_stock'] =$theme['in_stock'];
-          $product['product_image_url'] =$theme['product_image_url'];
+          $product['image'] =$theme['image'];
           $product['seller_name'] =$theme['seller_name'];
           $product['created_at'] =$theme['created_at'];
           $product['theme_id'] =$theme['id'];
+        
         return response()->json($product);
         }
       }else{
-        $themes = Themes::where('product_id',$product_id)
-        ->get();
-        $product['themes']= $themes;
+        /** @var \app\Models\Products $product */
+       $product=  $product->with('themes')->find($products_id);
         return response()->json($product);
       }
 
